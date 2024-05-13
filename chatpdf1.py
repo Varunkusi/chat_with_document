@@ -33,15 +33,15 @@ def get_text_from_txt(txt_files):
             text += file.read() + "\n"
     return text
 
-# def get_text_from_links(links):
-#     text = ""
-#     for link in links:
-#         response = requests.get(link)
-#         soup = BeautifulSoup(response.content, "html.parser")
-#         paragraphs = soup.find_all("p")
-#         for para in paragraphs:
-#             text += para.text + "\n"
-#     return text
+def get_text_from_links(links):
+    text = ""
+    for link in links:
+        response = requests.get(link)
+        soup = BeautifulSoup(response.content, "html.parser")
+        paragraphs = soup.find_all("p")
+        for para in paragraphs:
+            text += para.text + "\n"
+    return text
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -61,8 +61,8 @@ def get_text_from_sources(user_files):
             text += get_text_from_docx([file])
         elif extension.lower() == ".txt":
             text += get_text_from_txt([file])
-        # elif extension.lower() in [".html", ".htm"]:
-        #     text += get_text_from_links([file])
+        elif extension.lower() in [".html", ".htm"]:
+            text += get_text_from_links([file])
     return text
 
 def get_text_chunks(text):
