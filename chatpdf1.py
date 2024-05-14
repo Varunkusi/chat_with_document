@@ -436,8 +436,9 @@ def main():
         page_icon="🤖"
     )
 
-    if "api_key" not in st.session_state:
-        st.session_state.api_key = None  # Initialize api_key attribute
+    if "api_key" not in st.session_state or not st.session_state.api_key:
+        authenticate_api_key()
+        return
 
     # Sidebar for uploading PDF files
     with st.sidebar:
@@ -489,6 +490,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 # def main():
