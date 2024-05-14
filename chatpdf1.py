@@ -366,10 +366,10 @@ def main():
         # Sidebar menu
         with st.sidebar:
             st.title("Menu:")
-            pdf_docs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
+            docs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
             if st.button("Submit & Process"):
                 with st.spinner("Processing..."):
-                    raw_text = get_text_from_sources(pdf_docs)
+                    raw_text = get_text_from_sources(docs)
                     text_chunks = get_text_chunks(raw_text)
                     get_vector_store(text_chunks)
                     st.success("Done")
