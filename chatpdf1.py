@@ -292,18 +292,20 @@ def get_conversational_chain(api_key):
 
     return chain
 
-def user_input(user_question, api_key):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key = api_key)
-    
-    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+def user_input(user_question,api_key):
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",google_api_key = api_key)  # type: ignore
+
+    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True) 
     docs = new_db.similarity_search(user_question)
 
     chain = get_conversational_chain(api_key)
 
-    response = chain({"input_documents":docs, "question": user_question}, return_only_outputs=True)
+    response = chain(
+        {"input_documents": docs, "question": user_question}, return_only_outputs=True, )
 
     print(response)
-    st.write("Reply: ", response["output_text"])
+    return response
 
 # def user_input(user_question):
 #     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
@@ -322,6 +324,10 @@ def user_input(user_question, api_key):
 # from langchain_google_genai import GoogleGenerativeAIEmbeddings
 # import google.generativeai as genai
 
+def clear_chat_history():
+    st.session_state.messages = [
+        {"role": "assistant", "content": "upload some pdfs and ask me a question"}]
+    
 def authenticate_api_key():
     st.title("Enter Google API Key")
     st.write("You need a Google API Key to use this app.")
@@ -350,29 +356,61 @@ def upload_document():
 
 
 def main():
+    st.set_page_config(
+        page_title="Gemini PDF Chatbot",
+        page_icon="🤖"
+    )
+
     if "api_key" not in st.session_state:
-        authenticate_api_key()
-    else:
-        st.title("Chat with PDF using Gemini🤖")
-        st.markdown("<p style='text-align: center; font-size: 14px;'>done by 𝓥𝓪𝓻𝓾𝓷</p>", unsafe_allow_html=True)
+        st.session_state.api_key = None  # Initialize api_key attribute
 
-        # Input field for user question
-        user_question = st.text_input("Ask a Question from the PDF Files")
+    # Sidebar for uploading PDF files
+    with st.sidebar:
+        st.title("Menu:")
+        pdf_docs = st.file_uploader(
+            "Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
+        if st.button("Submit & Process"):
+            with st.spinner("Processing..."):
+                raw_text = get_pdf_text(pdf_docs)
+                text_chunks = get_text_chunks(raw_text)
+                get_vector_store(text_chunks)
+                st.success("Done")
 
-        # User question handling
-        if user_question:
-            user_input(user_question, st.session_state.api_key)
+    # Main content area for displaying chat messages
+    st.title("Chat with PDF files using Gemini🤖")
+    st.write("Welcome to the chat!")
+    st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-        # Sidebar menu
-        with st.sidebar:
-            st.title("Menu:")
-            docs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
-            if st.button("Submit & Process"):
-                with st.spinner("Processing..."):
-                    raw_text = get_text_from_sources(docs)
-                    text_chunks = get_text_chunks(raw_text)
-                    get_vector_store(text_chunks)
-                    st.success("Done")
+    # Chat input
+    # Placeholder for chat messages
+
+    if "messages" not in st.session_state.keys():
+        st.session_state.messages = [
+            {"role": "assistant", "content": "upload some pdfs and ask me a question"}]
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+    if prompt := st.chat_input():
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.write(prompt)
+
+    # Display chat messages and bot response
+    if st.session_state.messages[-1]["role"] != "assistant":
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = user_input(prompt, st.session_state.api_key)  # Pass api_key argument here
+                placeholder = st.empty()
+                full_response = ''
+                for item in response['output_text']:
+                    full_response += item
+                    placeholder.markdown(full_response)
+                placeholder.markdown(full_response)
+        if response is not None:
+            message = {"role": "assistant", "content": full_response}
+            st.session_state.messages.append(message)
 
 if __name__ == "__main__":
     main()
