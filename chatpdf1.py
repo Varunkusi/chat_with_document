@@ -148,7 +148,7 @@ def authenticate_api_key():
         # Set API key in session state
         st.session_state.api_key = api_key
         # Redirect to "Upload Document" page
-        st.experimental_rerun()
+        st.rerun()
     return api_key
 
 def upload_document():
